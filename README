@@ -1,0 +1,8 @@
+Ferret plugin for lokka
+
+***Before you proceed***
+
+MeCab binding for Ruby, ruby-mecab is not working as of ver.0.97 on Mac OS X when you install it with bundler.
+Instead, you must install system (gem install mecab-ruby) to activate mecab parser.
+
+
