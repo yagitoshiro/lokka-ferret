@@ -29,7 +29,7 @@ module Lokka
         end
       end
 
-      # All your /search/ is belong to us
+      # Al your /search/ is belong to us
       app.get '/search/' do
         ferret_init
         limit = settings.per_page
@@ -45,7 +45,20 @@ module Lokka
           else
             offset = 0
           end
-          @posts = @ferret.search(params[:query], offset, limit, page)
+          @posts = []
+          ferret_posts = @ferret.search(params[:query], offset, limit, page)
+          db_posts = Entry.all(:id => ferret_posts.map{|post| post.id})
+          ferret_posts.each do |post|
+            db_posts.each do |db_post|
+              if db_post.id.to_i == post.id.to_i
+                @posts << db_post
+              end
+            end
+          end
+          @posts.class_eval do
+            attr_accessor :pager
+          end
+          @posts.pager = ferret_posts.pager
         else
           @query = params[:query]
           @posts = Post.search(@query).
