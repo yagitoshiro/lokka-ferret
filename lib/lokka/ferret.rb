@@ -29,7 +29,7 @@ module Lokka
         end
       end
 
-      # Al your /search/ is belong to us
+      # All your /search/ is belong to us
       app.get '/search/' do
         ferret_init
         limit = settings.per_page

@@ -1,5 +1,4 @@
 require 'uri'
-require 'json'
 require 'open-uri'
 require 'rexml/document'
 
