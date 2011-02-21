@@ -1,18 +1,6 @@
 require 'ferret'
 require 'default_parser'
-
-class Entry
-  def ferret_index(ferret)
-    unless self.draft
-      doc = {}
-      [:title, :body, :created_at, :type, :slug].each do |name|
-        doc[name] = ferret.parse(self.__send__(name).to_s)
-      end
-      doc[:content_id] = self.id
-      ferret.index << doc
-      end
-  end
-end
+require 'dm-migrations'
 
 module Lokka
   module Ferret
@@ -29,7 +17,7 @@ module Lokka
         end
       end
 
-      # Al your /search/ is belong to us
+      # All your /search/ is belong to us
       app.get '/search/' do
         ferret_init
         limit = settings.per_page
@@ -38,28 +26,39 @@ module Lokka
 
         if !params[:query].blank? && @ferret_index_dir
           @query = params[:query]
-          q = []
-          page = params[:page] ? params[:page] : 1
-          if page > 1
-            offset = (page - 1) * limit + 1
-          else
-            offset = 0
-          end
+          q = '*:' + @ferret.parse(@query)
+
           @posts = []
-          ferret_posts = @ferret.search(params[:query], offset, limit, page)
-          db_posts = Entry.all(:id => ferret_posts.map{|post| post.id})
-          ferret_posts.each do |post|
-            db_posts.each do |db_post|
-              if db_post.id.to_i == post.id.to_i
-                db_post.body = post.body
-                @posts << db_post
-              end
-            end
+          ids = []
+
+          repo_data = repository(:search).search(q).to_a
+          unless repo_data.blank?
+            ids = repo_data[0][1].map{|id| id.to_i}
           end
-          @posts.class_eval do
-            attr_accessor :pager
-          end
-          @posts.pager = ferret_posts.pager
+          @posts = Entry.all(:id => ids).
+                      page(params[:page], :per_page => settings.per_page)
+#          q = []
+#          page = params[:page] ? params[:page] : 1
+#          if page > 1
+#            offset = (page - 1) * limit + 1
+#          else
+#            offset = 0
+#          end
+#          @posts = []
+#          ferret_posts = @ferret.search(params[:query], offset, limit, page)
+#          db_posts = Entry.all(:id => ferret_posts.map{|post| post.id})
+#          ferret_posts.each do |post|
+#            db_posts.each do |db_post|
+#              if db_post.id.to_i == post.id.to_i
+#                db_post.body = post.body
+#                @posts << db_post
+#              end
+#            end
+#          end
+#          @posts.class_eval do
+#            attr_accessor :pager
+#          end
+#          @posts.pager = ferret_posts.pager
         else
           @query = params[:query]
           @posts = Post.search(@query).
@@ -120,9 +119,8 @@ module Lokka
         if @ferret_index_dir && @ferret_parse_method
           require "#{@ferret_parse_method}_parser"
           @ferret = ::Lokka.const_get("#{@ferret_parse_method.camelize}_Parser").new(@ferret_yahoo_id)
-          index = ::Ferret::Index::Index.new(:path => @ferret_index_dir, :analyzer => ::Ferret::Analysis::WhiteSpaceAnalyzer.new, :auto_flush => true) 
-          ::Ferret.locale = 'ja_JP.UTF-8'
-          @ferret.index = index
+          ::DataMapper.setup(:search, {:term_vector => :yes, :adapter => :ferret, :path => @ferret_index_dir, :analyzer => ::Ferret::Analysis::WhiteSpaceAnalyzer.new, :auto_flush => true, :locale => 'ja_JP.UTF-8'})
+          require 'entry_ferret'
         end
       end
       unless @ferret_methods

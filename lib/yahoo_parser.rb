@@ -27,9 +27,5 @@ class Yahoo_Parser
       str
     end
   end
-
-  def find(query, offset, limit)
-    search parse(convert_str(query).to_s), offset, limit
-  end
 end
 
