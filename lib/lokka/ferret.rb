@@ -37,28 +37,20 @@ module Lokka
           end
           @posts = Entry.all(:id => ids).
                       page(params[:page], :per_page => settings.per_page)
-#          q = []
-#          page = params[:page] ? params[:page] : 1
-#          if page > 1
-#            offset = (page - 1) * limit + 1
-#          else
-#            offset = 0
-#          end
-#          @posts = []
-#          ferret_posts = @ferret.search(params[:query], offset, limit, page)
-#          db_posts = Entry.all(:id => ferret_posts.map{|post| post.id})
-#          ferret_posts.each do |post|
-#            db_posts.each do |db_post|
-#              if db_post.id.to_i == post.id.to_i
-#                db_post.body = post.body
-#                @posts << db_post
-#              end
-#            end
-#          end
-#          @posts.class_eval do
-#            attr_accessor :pager
-#          end
-#          @posts.pager = ferret_posts.pager
+          # stupid sort ordering
+          page = params[:page] ? params[:page] : 1
+          if page > 1
+            offset = (page - 1) * limit + 1
+          else
+            offset = 0
+          end
+          tmp_post_hash = {}
+          @posts.each do |post|
+            tmp_post_hash[post.id] = post
+          end
+          ids.slice(offset, ids.size).each_with_index do |post, id|
+            @posts[id] = tmp_post_hash[post]
+          end
         else
           @query = params[:query]
           @posts = Post.search(@query).
