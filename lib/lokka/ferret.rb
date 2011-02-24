@@ -48,7 +48,7 @@ module Lokka
           @posts.each do |post|
             tmp_post_hash[post.id] = post
           end
-          ids.slice(offset, ids.size).each_with_index do |post, id|
+          ids.slice(offset, setting.per_page).each_with_index do |post, id|
             @posts[id] = tmp_post_hash[post]
           end
         else
