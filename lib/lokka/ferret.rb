@@ -26,7 +26,7 @@ module Lokka
 
         if !params[:query].blank? && @ferret_index_dir
           @query = params[:query]
-          q = '*:' + @ferret.parse(@query)
+          q = @ferret.parse(@query)
 
           @posts = []
           ids = []
@@ -48,7 +48,7 @@ module Lokka
           @posts.each do |post|
             tmp_post_hash[post.id] = post
           end
-          ids.slice(offset, setting.per_page).each_with_index do |post, id|
+          ids.slice(offset, settings.per_page).each_with_index do |post, id|
             @posts[id] = tmp_post_hash[post]
           end
         else
