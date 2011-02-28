@@ -33,23 +33,32 @@ module Lokka
 
           repo_data = repository(:search).search(q).to_a
           unless repo_data.blank?
-            ids = repo_data[0][1].map{|id| id.to_i}
+            ids = repo_data[0][1].map{|id| id.to_i}.uniq!
           end
           @posts = Entry.all(:id => ids).
                       page(params[:page], :per_page => settings.per_page)
-          # stupid sort ordering
-          page = params[:page] ? params[:page] : 1
-          if page > 1
-            offset = (page - 1) * limit + 1
-          else
-            offset = 0
-          end
-          tmp_post_hash = {}
-          @posts.each do |post|
-            tmp_post_hash[post.id] = post
-          end
-          ids.slice(offset, settings.per_page).each_with_index do |post, id|
-            @posts[id] = tmp_post_hash[post]
+          if @posts.size > 0
+            # stupid sort ordering
+            page = params[:page] ? params[:page] : 1
+            if page > 1
+              offset = (page - 1) * limit + 1
+            else
+              offset = 0
+            end
+            tmp_post_hash = {}
+            @posts.each do |post|
+              tmp_post_hash[post.id] = post
+            end
+            ids.slice(offset, settings.per_page).each_with_index do |post, id|
+              @posts[id] = tmp_post_hash[post]
+            end
+            # let's get crazy even more
+            tmp_pager = @posts.pager
+            @posts = @posts.to_a
+            @posts.class_eval do
+              attr_accessor :pager
+            end
+            @posts.pager = tmp_pager
           end
         else
           @query = params[:query]
