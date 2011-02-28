@@ -7,10 +7,6 @@ module Ferret_Parser
   def convert_str(str) # justify width of multibyte chars
     ::Kana.kana(str, "nrKsa")
   end
-
-  def parse_query(str)
-    str.to_s.gsub(/ /, '|')
-  end
 end
 
 class Default_Parser
